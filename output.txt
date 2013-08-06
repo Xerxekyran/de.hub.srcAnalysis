@@ -1,0 +1,5 @@
+D:\workspace-scala\01_tmp\srcrepo\clones\srcrepo.example2.git\src\de\hub\srcexample2\HelloWorld.java,D:\workspace-scala\01_tmp\srcrepo\clones\srcrepo.example2.git\src\de\hub\srcexample2\imported\Player.java
+D:\workspace-scala\01_tmp\srcrepo\clones\srcrepo.example2.git\src\de\hub\srcexample2\HelloWorld.java,String
+D:\workspace-scala\01_tmp\srcrepo\clones\srcrepo.example2.git\src\de\hub\srcexample2\HelloWorld.java,D:\workspace-scala\01_tmp\srcrepo\clones\srcrepo.example2.git\src\de\hub\srcexample2\NewClass.java
+D:\workspace-scala\01_tmp\srcrepo\clones\srcrepo.example2.git\src\de\hub\srcexample2\HelloWorld.java,String
+D:\workspace-scala\01_tmp\srcrepo\clones\srcrepo.example2.git\src\de\hub\srcexample2\HelloWorld.java,D:\workspace-scala\01_tmp\srcrepo\clones\srcrepo.example2.git\src\de\hub\srcexample2\imported\Player.java
