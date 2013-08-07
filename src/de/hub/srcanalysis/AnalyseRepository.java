@@ -48,8 +48,8 @@ public class AnalyseRepository {
     private static Logger log = Logger.getRootLogger();
 
     // private static String repoUri = "hbase://localhost/srcrepo.example.bin";
-//    private static String repoUri = "hbase://localhost/emffrag.bin";
-     private static String repoUri = "hbase://localhost/srcrepo.example2.bin";
+    private static String repoUri = "hbase://localhost/emffrag.bin";
+//     private static String repoUri = "hbase://localhost/srcrepo.example2.bin";
 
     private FragmentedModel model = null;
     private Model javaModel = null;
@@ -160,7 +160,7 @@ public class AnalyseRepository {
 		Iterator<FileDependency> values = data.get(key).iterator();
 		while (values.hasNext()) {
 		    FileDependency val = values.next();
-		    writer.write(key + "," + val.getTargetDependency());
+		    writer.write(key + "," + val.getTargetDependency()+ ","+ val.getDependecyType());
 		    writer.write(System.getProperty("line.separator"));
 		}
 	    }

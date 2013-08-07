@@ -66,7 +66,9 @@ public class ScatterPlot extends ApplicationFrame {
      */
     private static XYDataset convertDataSet(Map<String, ArrayList<FileDependency>> dataSet) {
 	XYSeriesCollection xySeriesCollection = new XYSeriesCollection();
-	XYSeries series = new XYSeries("File Dependencies");
+	XYSeries unknownSeries = new XYSeries("File Dependencies Unknown");
+	XYSeries functionCallSeries = new XYSeries("File Dependencies Function Call");
+	XYSeries importSeries = new XYSeries("File Dependencies Imports");
 
 	HashMap<String, Integer> indexMapper = new HashMap<String, Integer>();
 	int index = 0;
@@ -95,13 +97,22 @@ public class ScatterPlot extends ApplicationFrame {
 
 		Integer xVal = indexMapper.get(key);
 		Integer yVal = indexMapper.get(dependence.getTargetDependency());
-
-		series.add(xVal, yVal);
+		
+		if(dependence.getDependecyType().equals(DependencyType.FunctionCall)) {		    
+		    functionCallSeries.add(xVal, yVal);
+		} else if(dependence.getDependecyType().equals(DependencyType.Unknown)) {
+		    unknownSeries.add(xVal, yVal);		
+	    	} else if(dependence.getDependecyType().equals(DependencyType.Import)) {
+		    importSeries.add(xVal, yVal);
+		}
+		
 		System.out.println("adding (" + xVal + " / " + yVal + ") :: " + key + " -> " + dependence.getTargetDependency());
 	    }
 	}
 
-	xySeriesCollection.addSeries(series);
+	xySeriesCollection.addSeries(unknownSeries);
+	xySeriesCollection.addSeries(functionCallSeries);
+	xySeriesCollection.addSeries(importSeries);
 	return xySeriesCollection;
     }
 

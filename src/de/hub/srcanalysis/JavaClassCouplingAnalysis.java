@@ -8,21 +8,32 @@ import java.util.Iterator;
 import java.util.TreeMap;
 
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.TreeIterator;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.gmt.modisco.java.AbstractMethodDeclaration;
 import org.eclipse.gmt.modisco.java.AbstractTypeDeclaration;
 import org.eclipse.gmt.modisco.java.ArrayType;
+import org.eclipse.gmt.modisco.java.Block;
 import org.eclipse.gmt.modisco.java.BodyDeclaration;
 import org.eclipse.gmt.modisco.java.ClassDeclaration;
 import org.eclipse.gmt.modisco.java.CompilationUnit;
 import org.eclipse.gmt.modisco.java.ConstructorDeclaration;
 import org.eclipse.gmt.modisco.java.EnumDeclaration;
+import org.eclipse.gmt.modisco.java.Expression;
+import org.eclipse.gmt.modisco.java.ExpressionStatement;
 import org.eclipse.gmt.modisco.java.FieldDeclaration;
 import org.eclipse.gmt.modisco.java.ImportDeclaration;
 import org.eclipse.gmt.modisco.java.InterfaceDeclaration;
 import org.eclipse.gmt.modisco.java.MethodDeclaration;
+import org.eclipse.gmt.modisco.java.MethodInvocation;
 import org.eclipse.gmt.modisco.java.NamedElement;
 import org.eclipse.gmt.modisco.java.PrimitiveType;
+import org.eclipse.gmt.modisco.java.ReturnStatement;
 import org.eclipse.gmt.modisco.java.SingleVariableDeclaration;
+import org.eclipse.gmt.modisco.java.Statement;
 import org.eclipse.gmt.modisco.java.Type;
+import org.eclipse.gmt.modisco.java.TypeAccess;
+import org.eclipse.gmt.modisco.java.VariableDeclaration;
 
 import de.hub.srcanalysis.datamodel.DependencyType;
 import de.hub.srcanalysis.datamodel.FileDependency;
@@ -44,7 +55,8 @@ public class JavaClassCouplingAnalysis {
      * Configuration variables to set the granularity
      */
     public boolean analyzeImports = true;
-    public boolean analyzeMethods = true;
+    public boolean analyzeMethodDeclarations = true;
+    public boolean analyzeMethodBodies = true;
     public boolean analyzeFields = true;
     public boolean analyzeConstructors = true;
 
@@ -95,8 +107,13 @@ public class JavaClassCouplingAnalysis {
 			    analyzeFields((FieldDeclaration) bodyDecl);
 			} else if (analyzeConstructors && bodyDecl instanceof ConstructorDeclaration) {
 			    analyzeConstructor((ConstructorDeclaration) bodyDecl);
-			} else if (analyzeMethods && bodyDecl instanceof MethodDeclaration) {
-			    analyzeMethod((MethodDeclaration) bodyDecl);
+			} else if (bodyDecl instanceof MethodDeclaration) {
+			    if (analyzeMethodDeclarations) {
+				analyzeMethodDeclaration((MethodDeclaration) bodyDecl);
+			    }
+			    if (analyzeMethodBodies) {
+				analyzeMethodBody((MethodDeclaration) bodyDecl);
+			    }
 			}
 		    }
 		    // Interfaces
@@ -111,8 +128,8 @@ public class JavaClassCouplingAnalysis {
 			    analyzeFields((FieldDeclaration) bodyDecl);
 			} else if (analyzeConstructors && bodyDecl instanceof ConstructorDeclaration) {
 			    analyzeConstructor((ConstructorDeclaration) bodyDecl);
-			} else if (analyzeMethods && bodyDecl instanceof MethodDeclaration) {
-			    analyzeMethod((MethodDeclaration) bodyDecl);
+			} else if (analyzeMethodDeclarations && bodyDecl instanceof MethodDeclaration) {
+			    analyzeMethodDeclaration((MethodDeclaration) bodyDecl);
 			}
 		    }
 		} else {
@@ -122,12 +139,16 @@ public class JavaClassCouplingAnalysis {
 
 	}
 
-	System.out.println("--------- RESULT: ---------------------");
-	Iterator<String> couplingKeyIt = fileBasedCouplings.keySet().iterator();
-	while (couplingKeyIt.hasNext()) {
-	    String couplingKey = couplingKeyIt.next();
-	    System.out.println(couplingKey + " --> " + fileBasedCouplings.get(couplingKey));
-	}
+	/*
+	 * System.out.println("--------- RESULT: ---------------------");
+	 * Iterator<String> couplingKeyIt =
+	 * fileBasedCouplings.keySet().iterator(); while
+	 * (couplingKeyIt.hasNext()) { String couplingKey =
+	 * couplingKeyIt.next(); ArrayList<FileDependency> arrayList =
+	 * fileBasedCouplings.get(couplingKey); System.out.println(couplingKey +
+	 * " --> "); Iterator<FileDependency> iterator = arrayList.iterator();
+	 * while(iterator.hasNext()) { System.out.println(iterator.next()); } }
+	 */
     }
 
     /**
@@ -142,9 +163,9 @@ public class JavaClassCouplingAnalysis {
     /**
      * 
      * @param type
+     * @param depType
      */
-    private void analyzeType(Type type) {
-
+    private void analyzeType(Type type, DependencyType depType) {
 	if (type instanceof ClassDeclaration) {
 	    // ClassDeclaration
 	    CompilationUnit originalCompilationUnit = type.getOriginalCompilationUnit();
@@ -183,30 +204,105 @@ public class JavaClassCouplingAnalysis {
 
     /**
      * 
+     * @param type
+     */
+    private void analyzeType(Type type) {
+	analyzeType(type, DependencyType.Unknown);
+    }
+
+    /**
+     * 
      * @param compilationUnit
      */
-    private boolean analyzeCompilationUnit(CompilationUnit compilationUnit) {
+    private boolean analyzeCompilationUnit(CompilationUnit compilationUnit, DependencyType depType) {
 	if (compilationUnit == null)
 	    return false;
 
 	String originalFilePath = compilationUnit.getOriginalFilePath();
 	if (originalFilePath != null && originalFilePath != "") {
-	    addDependency(currentFilePath, originalFilePath);
+	    addDependency(currentFilePath, originalFilePath, depType);
 	}
 	return true;
     }
 
     /**
      * 
+     * @param compilationUnit
+     * @return
+     */
+    private boolean analyzeCompilationUnit(CompilationUnit compilationUnit) {
+	return analyzeCompilationUnit(compilationUnit, DependencyType.Unknown);
+    }
+
+    /**
+     * 
      * @param method
      */
-    private void analyzeMethod(MethodDeclaration method) {
+    private void analyzeMethodDeclaration(MethodDeclaration method) {
 	Iterator<SingleVariableDeclaration> iterator = method.getParameters().iterator();
 	while (iterator.hasNext()) {
 	    SingleVariableDeclaration next = iterator.next();
 	    Type type = next.getType().getType();
 	    analyzeType(type);
 	}
+    }
+
+    /**
+     * 
+     * @param method
+     */
+    private void analyzeMethodBody(MethodDeclaration method) {
+
+	Block body = method.getBody();
+	if (body != null) {
+	    EList<Statement> statements = body.getStatements();
+	    if (statements != null) {
+		// browse through all statements
+		Iterator<Statement> it = statements.iterator();
+		while (it.hasNext()) {
+		    Statement st = it.next();
+
+		    // An expression
+		    if (st instanceof ExpressionStatement) {
+			ExpressionStatement ex = (ExpressionStatement) st;
+			Expression expression = ex.getExpression();
+			if (expression != null) {
+
+			    // Method invocation
+			    if (expression instanceof MethodInvocation) {
+				// look if we can get the called method and the
+				// compilation unit of the class of that method
+				AbstractMethodDeclaration invokedMethod = ((MethodInvocation) expression).getMethod();
+				if (invokedMethod != null) {
+				    CompilationUnit originalCompilationUnit = invokedMethod.getOriginalCompilationUnit();
+				    if (originalCompilationUnit != null) {
+					// we got the target compilation unit
+					analyzeCompilationUnit(originalCompilationUnit, DependencyType.FunctionCall);
+				    } else {
+					// method invocation call into a class
+					// that we do not have the compilation
+					// unit from, try to get the
+					// abstgractTypeDeclaration instead
+					AbstractTypeDeclaration abstractTypeDeclaration = invokedMethod.getAbstractTypeDeclaration();
+					if (abstractTypeDeclaration != null) {
+					    analyzeType(abstractTypeDeclaration, DependencyType.FunctionCall);
+					}
+				    }
+				} else {
+				    System.out.println("WARN: Invoked Method is null");
+				}
+			    }
+			}
+			// System.out.println("Expression: " + expression);
+		    } else if (st instanceof ReturnStatement) {
+
+		    } else if (st instanceof VariableDeclaration) {
+
+		    }		    
+		}
+	    }
+	}
+
     }
 
     /**

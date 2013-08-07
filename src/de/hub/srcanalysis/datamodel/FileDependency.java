@@ -4,7 +4,7 @@ package de.hub.srcanalysis.datamodel;
  * DataObject class for dependencies
  * 
  * @author george
- *
+ * 
  */
 public class FileDependency {
     private String sourceDependency = "";
@@ -61,6 +61,19 @@ public class FileDependency {
 
     @Override
     public String toString() {
-        return "to ["+ getTargetDependency() +"]";
+	return "from [" + getSourceDependency() + "] to [" + getTargetDependency() + "] of type [" + getDependecyType() + "]";
+    }
+
+    @Override
+    public boolean equals(Object arg0) {
+	if (arg0 == null || !(arg0 instanceof FileDependency))
+	    return false;
+
+	FileDependency fd = (FileDependency) arg0;
+
+	boolean retVal = getDependecyType().equals(fd.getDependecyType()) && getSourceDependency().equals(fd.getSourceDependency())
+		&& getTargetDependency().equals(fd.getTargetDependency()) && getAdditionalInformation() == fd.getAdditionalInformation();
+	//System.out.println(fd.getSourceDependency() + "-> "+ fd.getTargetDependency() +" equals "+ getSourceDependency() +" -> "+ getTargetDependency() + " == "+retVal );
+	return retVal;
     }
 }
