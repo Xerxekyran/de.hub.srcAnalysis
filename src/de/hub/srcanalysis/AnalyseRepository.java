@@ -27,6 +27,7 @@ import de.hub.emffrag.fragmentation.ReflectiveMetaModelRegistry;
 import de.hub.emffrag.hbase.EmfFragHBaseActivator;
 import de.hub.emffrag.model.emffrag.EmfFragPackage;
 import de.hub.emffrag.util.Extensions;
+import de.hub.srcanalysis.couplingAnalysis.JavaClassCouplingAnalysis;
 import de.hub.srcanalysis.datamodel.FileDependency;
 import de.hub.srcanalysis.gitModelVisitor.JavaClassAnalysisGitModelVisitor;
 import de.hub.srcanalysis.gui.ScatterPlot;
@@ -39,6 +40,8 @@ import de.hub.srcrepo.gitmodel.emffrag.metadata.GitModelPackage;
 import de.hub.srcrepo.gitmodel.util.GitModelUtil;
 
 /**
+ * Testclass for an anylsis of an Git repository saved with EMF-Fragment
+ * 
  * 
  * @author george
  * 
@@ -90,6 +93,7 @@ public class AnalyseRepository {
 		break;
 	    }
 	}
+	
 	if (ret == null)
 	    System.out.println("WARNING: Could not find the Head Commit in the references of the GIT model");
 	return ret;
@@ -131,9 +135,7 @@ public class AnalyseRepository {
 	System.out.println("Number of compilation units: " + javaClasses.size());
 
 	JavaClassCouplingAnalysis javaClassCouplingAnalysis = new JavaClassCouplingAnalysis();
-	javaClassCouplingAnalysis.calculateCouplings(javaClasses);
-
-	TreeMap<String, ArrayList<FileDependency>> couplings = javaClassCouplingAnalysis.getCouplings();
+	TreeMap<String, ArrayList<FileDependency>> couplings = javaClassCouplingAnalysis.calculateCouplings(javaClasses);
 
 	analyzer.persistData(couplings, "output.txt");
 

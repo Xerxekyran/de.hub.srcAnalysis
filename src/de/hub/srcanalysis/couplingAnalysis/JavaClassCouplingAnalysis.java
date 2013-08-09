@@ -1,4 +1,4 @@
-package de.hub.srcanalysis;
+package de.hub.srcanalysis.couplingAnalysis;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -34,7 +34,7 @@ import org.eclipse.gmt.modisco.java.VariableDeclaration;
 import de.hub.srcanalysis.datamodel.DependencyType;
 import de.hub.srcanalysis.datamodel.FileDependency;
 
-public class JavaClassCouplingAnalysis {
+public class JavaClassCouplingAnalysis implements CouplingAnalysis{
 
     private class FileBasedOrderComparator implements Comparator<String> {
 	@Override
@@ -61,17 +61,9 @@ public class JavaClassCouplingAnalysis {
 
     /**
      * 
-     * @return
-     */
-    public TreeMap<String, ArrayList<FileDependency>> getCouplings() {
-	return fileBasedCouplings;
-    }
-
-    /**
-     * 
      * @param map
      */
-    public void calculateCouplings(HashMap<String, CompilationUnit> map) {
+    public TreeMap<String, ArrayList<FileDependency>> calculateCouplings(HashMap<String, CompilationUnit> map) {
 	Iterator<CompilationUnit> valueIt = map.values().iterator();
 	while (valueIt.hasNext()) {
 	    CompilationUnit next = valueIt.next();
@@ -136,6 +128,8 @@ public class JavaClassCouplingAnalysis {
 
 	}
 
+	return fileBasedCouplings;
+	
 	/*
 	 * System.out.println("--------- RESULT: ---------------------");
 	 * Iterator<String> couplingKeyIt =

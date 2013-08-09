@@ -21,7 +21,6 @@ import org.jfree.chart.entity.ChartEntity;
 import org.jfree.chart.entity.XYItemEntity;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYDotRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
@@ -39,10 +38,10 @@ public class ScatterPlot extends ApplicationFrame {
      */
     private static final long serialVersionUID = -4370752563010488523L;
 
-    private Map<String, ArrayList<FileDependency>> dataSet = null; 
+    private Map<String, ArrayList<FileDependency>> dataSet = null;
     private HashMap<String, Integer> indexMapPathToIndex = null;
     private HashMap<String, LinkedList<FileDependency>> indexMapIndexToFileDependency = null;
-    
+
     /**
      * 
      * @param s
@@ -51,7 +50,7 @@ public class ScatterPlot extends ApplicationFrame {
     public ScatterPlot(String s, Map<String, ArrayList<FileDependency>> dataSet) {
 	super(s);
 	this.dataSet = dataSet;
-	
+
 	JPanel jpanel = createPanel(dataSet, s);
 	jpanel.setPreferredSize(new Dimension(800, 600));
 	((ChartPanel) jpanel).addChartMouseListener(new ChartMouseListener() {
@@ -72,23 +71,24 @@ public class ScatterPlot extends ApplicationFrame {
 		    XYDataset dataset = (XYDataset) xyitem.getDataset(); // get
 									 // data
 									 // set
-		    
+
 		    double x = dataset.getXValue(xyitem.getSeriesIndex(), xyitem.getItem());
 		    double y = dataset.getYValue(xyitem.getSeriesIndex(), xyitem.getItem());
 
-		    System.out.println("On position ("+ x +" / "+ y +") are the following dependencies: ");
+		    System.out.println("On position (" + x + " / " + y + ") are the following dependencies: ");
 		    LinkedList<FileDependency> fileDependency = getFileDependency(Double.valueOf(x).intValue(), Double.valueOf(y).intValue());
-		    
+
 		    Iterator<FileDependency> it = fileDependency.iterator();
-		    while(it.hasNext()) {
+		    while (it.hasNext()) {
 			FileDependency next = it.next();
 			System.out.print("--> ");
 			System.out.println(next);
-		    }		    
-		    
-//		    System.out.println(xyitem.getItem() + " item of " + xyitem.getSeriesIndex() + "series");		    
-//		    System.out.println(x);		    
-//		    System.out.println(y);
+		    }
+
+		    // System.out.println(xyitem.getItem() + " item of " +
+		    // xyitem.getSeriesIndex() + "series");
+		    // System.out.println(x);
+		    // System.out.println(y);
 
 		}
 	    }
@@ -145,12 +145,12 @@ public class ScatterPlot extends ApplicationFrame {
 	}
 
 	indexMapIndexToFileDependency = new HashMap<String, LinkedList<FileDependency>>();
-	
+
 	index = 0;
 
 	// now add the dependency data points
-	Iterator<String> it = dataSet.keySet().iterator();	
-	
+	Iterator<String> it = dataSet.keySet().iterator();
+
 	while (it.hasNext()) {
 	    String key = it.next();
 	    ArrayList<FileDependency> dependencies = dataSet.get(key);
@@ -160,8 +160,8 @@ public class ScatterPlot extends ApplicationFrame {
 		FileDependency dependence = depIt.next();
 
 		Integer xVal = indexMapPathToIndex.get(key);
-		Integer yVal = indexMapPathToIndex.get(dependence.getTargetDependency());		
-		
+		Integer yVal = indexMapPathToIndex.get(dependence.getTargetDependency());
+
 		if (dependence.getDependecyType().equals(DependencyType.FunctionCall)) {
 		    functionCallSeries.add(xVal, yVal);
 		} else if (dependence.getDependecyType().equals(DependencyType.Unknown)) {
@@ -171,16 +171,14 @@ public class ScatterPlot extends ApplicationFrame {
 		}
 
 		LinkedList<FileDependency> fileDeps = indexMapIndexToFileDependency.get(xVal + "_" + yVal);
-		if(fileDeps == null) {
+		if (fileDeps == null) {
 		    LinkedList<FileDependency> newList = new LinkedList<FileDependency>();
 		    newList.add(dependence);
 		    indexMapIndexToFileDependency.put(xVal + "_" + yVal, newList);
 		} else {
-		    System.out.println("adding to existing");
 		    fileDeps.add(dependence);
 		}
-		
-		
+
 		System.out.println("adding (" + xVal + " / " + yVal + ") :: " + key + " -> " + dependence.getTargetDependency() + " ["
 			+ dependence.getDependecyType() + "]");
 	    }
@@ -199,11 +197,11 @@ public class ScatterPlot extends ApplicationFrame {
      * @return
      */
     public LinkedList<FileDependency> getFileDependency(Integer x, Integer y) {
-//	indexMapIndexToFileDependency.get(xyKey);
-//	System.out.println("Getting "+ x + " | "+ y);
+	// indexMapIndexToFileDependency.get(xyKey);
+	// System.out.println("Getting "+ x + " | "+ y);
 	return indexMapIndexToFileDependency.get(x + "_" + y);
     }
-    
+
     public static void main(String args[]) {
 	TreeMap<String, ArrayList<FileDependency>> data = new TreeMap<String, ArrayList<FileDependency>>();
 
