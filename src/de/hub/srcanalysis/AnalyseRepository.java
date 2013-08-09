@@ -136,7 +136,7 @@ public class AnalyseRepository {
 	TreeMap<String, ArrayList<FileDependency>> couplings = javaClassCouplingAnalysis.getCouplings();
 
 	analyzer.persistData(couplings, "output.txt");
-	
+
 	ScatterPlot scatterplot = new ScatterPlot("File based dependency analysis", couplings);
 	scatterplot.pack();
 	RefineryUtilities.centerFrameOnScreen(scatterplot);
@@ -160,7 +160,7 @@ public class AnalyseRepository {
 		Iterator<FileDependency> values = data.get(key).iterator();
 		while (values.hasNext()) {
 		    FileDependency val = values.next();
-		    writer.write(key + "," + val.getTargetDependency()+ ","+ val.getDependecyType());
+		    writer.write(key + "," + val.getTargetDependency() + "," + val.getDependecyType());
 		    writer.write(System.getProperty("line.separator"));
 		}
 	    }

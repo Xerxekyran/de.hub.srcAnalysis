@@ -1,6 +1,5 @@
 package de.hub.srcanalysis;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -8,8 +7,6 @@ import java.util.Iterator;
 import java.util.TreeMap;
 
 import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.common.util.TreeIterator;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gmt.modisco.java.AbstractMethodDeclaration;
 import org.eclipse.gmt.modisco.java.AbstractTypeDeclaration;
 import org.eclipse.gmt.modisco.java.ArrayType;
@@ -32,7 +29,6 @@ import org.eclipse.gmt.modisco.java.ReturnStatement;
 import org.eclipse.gmt.modisco.java.SingleVariableDeclaration;
 import org.eclipse.gmt.modisco.java.Statement;
 import org.eclipse.gmt.modisco.java.Type;
-import org.eclipse.gmt.modisco.java.TypeAccess;
 import org.eclipse.gmt.modisco.java.VariableDeclaration;
 
 import de.hub.srcanalysis.datamodel.DependencyType;
@@ -59,6 +55,7 @@ public class JavaClassCouplingAnalysis {
     public boolean analyzeMethodBodies = true;
     public boolean analyzeFields = true;
     public boolean analyzeConstructors = true;
+    public boolean skipSrcGenDependencies = true;
 
     private String currentFilePath = "";
 
@@ -187,7 +184,7 @@ public class JavaClassCouplingAnalysis {
 	    if (!analyzeCompilationUnit(originalCompilationUnit)) {
 		// System.out.println("WARN: Found an interface type with no compilation unit ("
 		// + type.getName() + ")");
-		addDependency(currentFilePath, type.getName());
+		addDependency(currentFilePath, type.getName(), depType);
 	    }
 	} else if (type instanceof EnumDeclaration) {
 	    // EnumDeclaration
@@ -195,7 +192,7 @@ public class JavaClassCouplingAnalysis {
 	    if (!analyzeCompilationUnit(originalCompilationUnit)) {
 		// System.out.println("WARN: Found an enum type with no compilation unit ("
 		// + type.getName() + ")");
-		addDependency(currentFilePath, type.getName());
+		addDependency(currentFilePath, type.getName(), depType);
 	    }
 	} else {
 	    System.out.println("WARN: Not yet analyzed type of Type (" + type + ")");
@@ -275,10 +272,7 @@ public class JavaClassCouplingAnalysis {
 				AbstractMethodDeclaration invokedMethod = ((MethodInvocation) expression).getMethod();
 				if (invokedMethod != null) {
 				    CompilationUnit originalCompilationUnit = invokedMethod.getOriginalCompilationUnit();
-				    if (originalCompilationUnit != null) {
-					// we got the target compilation unit
-					analyzeCompilationUnit(originalCompilationUnit, DependencyType.FunctionCall);
-				    } else {
+				    if (!analyzeCompilationUnit(originalCompilationUnit, DependencyType.FunctionCall)) {
 					// method invocation call into a class
 					// that we do not have the compilation
 					// unit from, try to get the
@@ -298,7 +292,7 @@ public class JavaClassCouplingAnalysis {
 
 		    } else if (st instanceof VariableDeclaration) {
 
-		    }		    
+		    }
 		}
 	    }
 	}
@@ -322,7 +316,7 @@ public class JavaClassCouplingAnalysis {
 	NamedElement importedElement = importDecl.getImportedElement();
 	CompilationUnit originalCompilationUnit = importedElement.getOriginalCompilationUnit();
 
-	if (!analyzeCompilationUnit(originalCompilationUnit)) {
+	if (!analyzeCompilationUnit(originalCompilationUnit, DependencyType.Import)) {
 	    // System.out.println("WARN: found an import element with no compilation unit ("
 	    // + importedElement.getName() + ")");
 	    addDependency(currentFilePath, importedElement.getName(), DependencyType.Import);
@@ -340,6 +334,13 @@ public class JavaClassCouplingAnalysis {
      *         the dependency already exists
      */
     private boolean addDependency(String from, FileDependency to) {
+	if (skipSrcGenDependencies) {
+	    if (from.contains("src-gen") || to.getTargetDependency().contains("src-gen") || from.contains("gen-src")
+		    || to.getTargetDependency().contains("gen-src")) {
+		return false;
+	    }
+	}
+
 	boolean retVal = false;
 
 	ArrayList<FileDependency> deps = fileBasedCouplings.get(from);
