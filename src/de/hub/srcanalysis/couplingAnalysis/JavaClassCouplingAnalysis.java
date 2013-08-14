@@ -55,6 +55,8 @@ public class JavaClassCouplingAnalysis implements CouplingAnalysis{
     public boolean analyzeMethodBodies = true;
     public boolean analyzeFields = true;
     public boolean analyzeConstructors = true;
+    
+    public boolean ignoreStandardClasses = true;
     public boolean skipSrcGenDependencies = true;
 
     private String currentFilePath = "";
@@ -122,7 +124,7 @@ public class JavaClassCouplingAnalysis implements CouplingAnalysis{
 			}
 		    }
 		} else {
-		    System.out.println("WARN: Not yet handled typeDeclaration (" + abstractTypeDeclaration + ")");
+		    // System.out.println("WARN: Not yet handled typeDeclaration (" + abstractTypeDeclaration + ")");
 		}
 	    }
 
@@ -189,7 +191,7 @@ public class JavaClassCouplingAnalysis implements CouplingAnalysis{
 		addDependency(currentFilePath, type.getName(), depType);
 	    }
 	} else {
-	    System.out.println("WARN: Not yet analyzed type of Type (" + type + ")");
+	    // System.out.println("WARN: Not yet analyzed type of Type (" + type + ")");
 	}
     }
 
@@ -331,6 +333,12 @@ public class JavaClassCouplingAnalysis implements CouplingAnalysis{
 	if (skipSrcGenDependencies) {
 	    if (from.contains("src-gen") || to.getTargetDependency().contains("src-gen") || from.contains("gen-src")
 		    || to.getTargetDependency().contains("gen-src")) {
+		return false;
+	    }
+	}
+	
+	if(ignoreStandardClasses) {
+	    if(!from.contains("\\") || !to.getTargetDependency().contains("\\")) {
 		return false;
 	    }
 	}

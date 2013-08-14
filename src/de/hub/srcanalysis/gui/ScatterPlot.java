@@ -38,8 +38,7 @@ public class ScatterPlot extends ApplicationFrame {
      */
     private static final long serialVersionUID = -4370752563010488523L;
 
-    private Map<String, ArrayList<FileDependency>> dataSet = null;
-    private HashMap<String, Integer> indexMapPathToIndex = null;
+    private Map<String, ArrayList<FileDependency>> dataSet = null;    
     private HashMap<String, LinkedList<FileDependency>> indexMapIndexToFileDependency = null;
 
     /**
@@ -131,7 +130,7 @@ public class ScatterPlot extends ApplicationFrame {
 	XYSeries functionCallSeries = new XYSeries("Function Call");
 	XYSeries importSeries = new XYSeries("Import");
 
-	this.indexMapPathToIndex = new HashMap<String, Integer>();
+	HashMap<String, Integer> indexMapPathToIndex = new HashMap<String, Integer>();
 	int index = 0;
 
 	Iterator<String> iterator = dataSet.keySet().iterator();

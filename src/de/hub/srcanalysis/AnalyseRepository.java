@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -26,15 +27,15 @@ import de.hub.emffrag.fragmentation.NoReferencesIdSemantics;
 import de.hub.emffrag.fragmentation.ReflectiveMetaModelRegistry;
 import de.hub.emffrag.hbase.EmfFragHBaseActivator;
 import de.hub.emffrag.model.emffrag.EmfFragPackage;
-import de.hub.emffrag.util.Extensions;
 import de.hub.srcanalysis.couplingAnalysis.JavaClassCouplingAnalysis;
 import de.hub.srcanalysis.datamodel.FileDependency;
 import de.hub.srcanalysis.gitModelVisitor.JavaClassAnalysisGitModelVisitor;
 import de.hub.srcanalysis.gui.ScatterPlot;
+import de.hub.srcanalysis.metrics.DependencyMatrix;
 import de.hub.srcrepo.emffrag.extensions.ExtensionsPackage;
-import de.hub.srcrepo.emffrag.extensions.ImportLog;
 import de.hub.srcrepo.gitmodel.Commit;
 import de.hub.srcrepo.gitmodel.EmfFragSourceRepository;
+import de.hub.srcrepo.gitmodel.ParentRelation;
 import de.hub.srcrepo.gitmodel.Ref;
 import de.hub.srcrepo.gitmodel.emffrag.metadata.GitModelPackage;
 import de.hub.srcrepo.gitmodel.util.GitModelUtil;
@@ -54,6 +55,12 @@ public class AnalyseRepository {
     private static String repoUri = "hbase://localhost/emffrag.bin";
 //     private static String repoUri = "hbase://localhost/srcrepo.example2.bin";
 
+    private static boolean SHOW_GRAPH = false;
+    private static boolean PERSIST_DATA_TO_FILE = false;
+    private static boolean ANALYZE_RECURSIVE = true;
+
+    private static int CNT_SKIP_COMMITS = 0;
+    
     private FragmentedModel model = null;
     private Model javaModel = null;
     private EmfFragSourceRepository gitModel = null;
@@ -93,9 +100,10 @@ public class AnalyseRepository {
 		break;
 	    }
 	}
-	
+
 	if (ret == null)
 	    System.out.println("WARNING: Could not find the Head Commit in the references of the GIT model");
+
 	return ret;
     }
 
@@ -105,9 +113,54 @@ public class AnalyseRepository {
      * @return
      */
     public HashMap<String, CompilationUnit> findJavaClassesForCommit(Commit commit) {
-	JavaClassAnalysisGitModelVisitor visitor = new JavaClassAnalysisGitModelVisitor(null);
+	JavaClassAnalysisGitModelVisitor visitor = new JavaClassAnalysisGitModelVisitor(commit);
 	GitModelUtil.visitCommitHierarchy(gitModel.getRootCommit(), visitor);
 	return visitor.getJavaClasses();
+    }
+
+    /**
+     * 
+     * @param commit
+     */
+    private void analyzeCommit(Commit commit) {
+	HashMap<String, CompilationUnit> javaClasses = findJavaClassesForCommit(commit);
+
+	// Iterator<CompilationUnit> iterator = javaClasses.values().iterator();
+	// while (iterator.hasNext()) {
+	// CompilationUnit next = iterator.next();
+	// ImportLog importLog = Extensions.get(next, ImportLog.class);
+	// if (importLog != null) {
+	// System.out.println("Error in Log: " +
+	// importLog.getEntries().toString());
+	// } else {
+	// System.out.println(next.getOriginalFilePath() + " :: " +
+	// next.getName());
+	// }
+	// }
+	// System.out.println("#################");
+	// System.out.println("Number of compilation units: " +
+	// javaClasses.size());
+
+	// analyze thecoupling
+	JavaClassCouplingAnalysis javaClassCouplingAnalysis = new JavaClassCouplingAnalysis();
+	TreeMap<String, ArrayList<FileDependency>> couplings = javaClassCouplingAnalysis.calculateCouplings(javaClasses);
+
+	// calculate the DependencyMatrix
+	DependencyMatrix dependencyMatrix = new DependencyMatrix(couplings);
+	System.out.println("Propagation Cost: " + dependencyMatrix.getPropagationCost());
+
+	// save as cvs file?
+	if (AnalyseRepository.PERSIST_DATA_TO_FILE) {
+	    persistData(couplings, "output.txt");
+	}
+
+	// with graph?
+	if (AnalyseRepository.SHOW_GRAPH) {
+	    ScatterPlot scatterplot = new ScatterPlot("File based dependency analysis", couplings);
+	    scatterplot.pack();
+	    RefineryUtilities.centerFrameOnScreen(scatterplot);
+	    scatterplot.setVisible(true);
+	}
     }
 
     /**
@@ -115,35 +168,35 @@ public class AnalyseRepository {
      */
     public static void main(String[] args) {
 	AnalyseRepository analyzer = new AnalyseRepository();
-
 	analyzer.init();
 
-	HashMap<String, CompilationUnit> javaClasses = analyzer.findJavaClassesForCommit(analyzer.getHeadCommit());
+	Commit currentCommit = analyzer.getHeadCommit();
 
-	Iterator<CompilationUnit> iterator = javaClasses.values().iterator();
-	while (iterator.hasNext()) {
-	    CompilationUnit next = iterator.next();
-	    ImportLog importLog = Extensions.get(next, ImportLog.class);
-	    if (importLog != null) {
-		System.out.println("Error in Log: " + importLog.getEntries().toString());
-	    } else {
-		System.out.println(next.getOriginalFilePath() + " :: " + next.getName());
+	System.out.print("Commit [" + currentCommit.getTime() + "] ");
+	analyzer.analyzeCommit(currentCommit);
+	int skipCounter = 0;
+
+	if (ANALYZE_RECURSIVE) {
+	    // repeat the analysis
+	    EList<ParentRelation> parentRelations = currentCommit.getParentRelations();
+	    while (parentRelations.size() != 0) {
+		// TODO: maybe follow all branches?
+		currentCommit = parentRelations.get(0).getParent();
+		if (currentCommit != null) {
+
+		    if (skipCounter >= CNT_SKIP_COMMITS) {
+			System.out.print("Commit [" + currentCommit.getTime() + "] ");
+			analyzer.analyzeCommit(currentCommit);
+			skipCounter = 0;
+		    }
+		    skipCounter++;
+
+		    parentRelations = currentCommit.getParentRelations();
+		} else {
+		    break;
+		}
 	    }
 	}
-
-	System.out.println("#################");
-	System.out.println("Number of compilation units: " + javaClasses.size());
-
-	JavaClassCouplingAnalysis javaClassCouplingAnalysis = new JavaClassCouplingAnalysis();
-	TreeMap<String, ArrayList<FileDependency>> couplings = javaClassCouplingAnalysis.calculateCouplings(javaClasses);
-
-	analyzer.persistData(couplings, "output.txt");
-
-	ScatterPlot scatterplot = new ScatterPlot("File based dependency analysis", couplings);
-	scatterplot.pack();
-	RefineryUtilities.centerFrameOnScreen(scatterplot);
-	scatterplot.setVisible(true);
-
     }
 
     /**
@@ -174,5 +227,4 @@ public class AnalyseRepository {
 	    e.printStackTrace();
 	}
     }
-
 }

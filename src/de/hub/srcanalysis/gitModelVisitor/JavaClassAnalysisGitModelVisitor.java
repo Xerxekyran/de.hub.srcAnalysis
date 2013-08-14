@@ -13,7 +13,7 @@ public class JavaClassAnalysisGitModelVisitor implements IGitModelVisitor {
 
     private HashMap<String, CompilationUnit> javaClasses = new HashMap<String, CompilationUnit>();
     private Commit haltOnCommit = null;
-    
+
     /**
      * 
      */
@@ -35,9 +35,9 @@ public class JavaClassAnalysisGitModelVisitor implements IGitModelVisitor {
     }
 
     @Override
-    public boolean onStartCommit(Commit commit) {	
-	if(commit.equals(this.haltOnCommit)) {
-	    System.out.println("Found the commit to stop analyzing. Now stopping.");
+    public boolean onStartCommit(Commit commit) {		
+	if(commit.getTime().equals(this.haltOnCommit.getTime())) {
+	    // System.out.println("Found the commit to stop analyzing. Now stopping.");
 	    return false;
 	}
 	
@@ -63,7 +63,7 @@ public class JavaClassAnalysisGitModelVisitor implements IGitModelVisitor {
 	    if(jd.getCompilationUnit() != null) {
 		javaClasses.put(jd.getNewPath(), jd.getCompilationUnit());
 	    } else {
-		System.out.println("WARN: Got a JavaDiff with a null as CompilationUnit ("+ diff +")");
+		// System.out.println("WARN: Got a JavaDiff with a null as CompilationUnit ("+ diff +")");
 	    }
 	    
 	}
@@ -76,7 +76,7 @@ public class JavaClassAnalysisGitModelVisitor implements IGitModelVisitor {
 
     @Override
     public void onDeletedFile(Diff diff) {
-	if (diff instanceof JavaDiff) {	    
+	if (diff instanceof JavaDiff) {	    	    
 	    JavaDiff jd = (JavaDiff) diff;
 	    javaClasses.remove(jd.getOldPath());
 	}
