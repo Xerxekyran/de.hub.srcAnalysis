@@ -32,7 +32,7 @@ import org.jfree.util.ShapeUtilities;
 import de.hub.srcanalysis.datamodel.DependencyType;
 import de.hub.srcanalysis.datamodel.FileDependency;
 
-public class ScatterPlot extends ApplicationFrame {
+public class JavaClassCouplingScatterPlot extends ApplicationFrame {
     /**
      * 
      */
@@ -46,7 +46,7 @@ public class ScatterPlot extends ApplicationFrame {
      * @param s
      * @param dataSet
      */
-    public ScatterPlot(String s, Map<String, ArrayList<FileDependency>> dataSet) {
+    public JavaClassCouplingScatterPlot(String s, Map<String, ArrayList<FileDependency>> dataSet) {
 	super(s);
 	this.dataSet = dataSet;
 
@@ -221,7 +221,7 @@ public class ScatterPlot extends ApplicationFrame {
 	dependencyFiles.add(new FileDependency("File4", "File1", DependencyType.Import));
 	data.put("File4", dependencyFiles);
 
-	ScatterPlot scatterplotdemo4 = new ScatterPlot("Scatter Plot Demo 4", data);
+	JavaClassCouplingScatterPlot scatterplotdemo4 = new JavaClassCouplingScatterPlot("Scatter Plot Demo 4", data);
 	scatterplotdemo4.pack();
 	RefineryUtilities.centerFrameOnScreen(scatterplotdemo4);
 	scatterplotdemo4.setVisible(true);

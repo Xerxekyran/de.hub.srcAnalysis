@@ -82,7 +82,7 @@ public class DependencyMatrix {
 	    ret += rowSum;
 	    rowSum = 0;
 	}
-	System.out.println("ret: "+ ret + " of matrice size: "+ matriceSize);
+	// System.out.println("ret: "+ ret + " of matrice size: "+ matriceSize);
 	
 	if(ret == 0 || matriceSize == 0)
 	    return 0;
